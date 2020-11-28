@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 from elasticsearch import Elasticsearch
 from torrequest import TorRequest
+from gmaps import Geocoding
 
 import os
 os.environ["PYSPARK_PYTHON"] = "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3.7"
@@ -19,7 +20,7 @@ os.environ["PYSPARK_DRIVER_PYTHON"] = "/Library/Frameworks/Python.framework/Vers
 TCP_IP = 'localhost'
 TCP_PORT = 8080
 
-geolocator = Nominatim(user_agent="tweet")
+#geopy = Geocoding(user_agent="tweet")
 
 
 
@@ -44,12 +45,27 @@ def processTweet(tweet):
         analysis = TextBlob(tweet)
         if analysis.sentiment.polarity > 0:
                  sentiment = "positive"
-        elif analysis.sentiment.polarity == 0:
-                sentiment = "positive"
+        elif analysis.sentiment.polarity < 0:
+                sentiment = "Negative"
         else:
-                sentiment = "positive"
-        
+                sentiment = "Neutral"
 
+        #location = geopy.geocoders(tweetData[0],addressdetails=True)
+        #state = location.rawLocation['address']['state']
+       # country = location.rawLocation['address']['country']
+
+        print("\n\n=========================\ntweet: ", tweet)
+        print("Text: ", text)
+        print("Sentiment: ", sentiment)
+        print ("Location", rawLocation)
+
+        #indexing on elastic search
+        elastic_search.index(index= "tweet-sentiment",doc_type="default",body={
+                "sentiment":sentiment, "location":rawLocation
+        })
+      
+        
+        '''
 	# (ii) Get geolocation (state, country, lat, lon, etc...) from rawLocation
         try:
                 location = geolocator.geocoders(tweetData[0],addressdetails=True)
@@ -60,13 +76,13 @@ def processTweet(tweet):
         except:
                 lat = lon = state = country=None
 
-
-        print("\n\n=========================\ntweet: ", tweet)
-        print("Raw location from tweet status: ", rawLocation)
-        print("lat: ", lat)
-        print("lon: ", lon)
-        print("state: ", state)
-        print("country: ", country)
+        
+       # print("\n\n=========================\ntweet: ", tweet)
+       # print("Raw location from tweet status: ", rawLocation)
+       # print("lat: ", lat)
+       # print("lon: ", lon)
+       # print("state: ", state)
+       # print("country: ", country)
         print("Text: ", text)
         print("Sentiment: ", sentiment)
 
@@ -74,19 +90,20 @@ def processTweet(tweet):
 
         # (iii) Post the index on ElasticSearch or log your data in some other way (you are always free!!)
 
+        
         if lat != None and lon != None and sentiment != None:
                eslastic_doc = {"lat": lat, "lon": lon, "state":state,"country":country,"sentiment":sentiment} 
                elastic_search.index(index='tweet-sentiment', doc_type='default', body= eslastic_doc)
-               elastic_search.index
+              
 
-        
+        '''
 
 
 # Pyspark
 # create spark configuration
 conf = SparkConf()
 conf.setAppName('TwitterApp')
-conf.setMaster('local[8]')
+conf.setMaster('local[2]')
 
 # create spark context with the above configuration
 sc = SparkContext(conf=conf)
