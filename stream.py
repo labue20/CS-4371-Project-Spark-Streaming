@@ -6,10 +6,10 @@ import re
 
 
 # Enter your Twitter keys here!!!
-ACCESS_TOKEN = "2961986860-DnHgI5bJEwSWikKgI9lTsmT0y9zidjiM4xCES3S"
-ACCESS_SECRET = "jBuXhX6ql7c8t9VjFuN5RycE97da4D7GvSzBDhmqEHDud"
-CONSUMER_KEY = "ohVk6m7kQ1FldfM6YFDpSRw5Z"
-CONSUMER_SECRET = "5h4ja19xAu5P8DmeayOWLd5ZsCWe2ANsbrqanEmn3kl4jydUiE"
+ACCESS_TOKEN = "316904931-Rbg62yiLjX5K2dbOzM1eemeL5dQAseWOaYBDbjri"
+ACCESS_SECRET = "jHjPN9FqE2gNY7WlUNAwTPsbEBolv1qZ7wVJZ2ilQAdnG"
+CONSUMER_KEY = "cUFhrZacmGHIBH2RqXOjSsNqf"
+CONSUMER_SECRET = "ASjbcJPUdhOO01dVJPpgqTuMO6MtiwUfZeyKLvg29TszhrWiDF"
 
 
 auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
@@ -71,7 +71,7 @@ def getTweet(status):
 # create sockets
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((TCP_IP, TCP_PORT))
-s.listen(1)
+s.listen(10)
 conn, addr = s.accept()
 
 class MyStreamListener(tweepy.StreamListener):
@@ -95,5 +95,3 @@ class MyStreamListener(tweepy.StreamListener):
 
 myStream = tweepy.Stream(auth=auth, listener=MyStreamListener())
 myStream.filter(track=[hashtag], languages=["en"])
-
-
