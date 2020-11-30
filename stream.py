@@ -2,12 +2,19 @@ import tweepy
 import socket
 import preprocessor
 import re
+import os
+from geopy.geocoders import Nominatim
+from elasticsearch import Elasticsearch
+from textblob import TextBlob
+
+os.environ["PYSPARK_PYTHON"] = "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3.7"
+os.environ["PYSPARK_DRIVER_PYTHON"] = "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3.7"
 
 
 
 # Enter your Twitter keys here!!!
-ACCESS_TOKEN = "2961986860-DnHgI5bJEwSWikKgI9lTsmT0y9zidjiM4xCES3S"
-ACCESS_SECRET = "jBuXhX6ql7c8t9VjFuN5RycE97da4D7GvSzBDhmqEHDud"
+ACCESS_TOKEN = "2961986860-Nw26zlEUvzyyaXGfQeugwu8Imhi1HE4qAGoqsEI"
+ACCESS_SECRET = "lCYngjmhWqmGMkz0ieqQRT4JvRywXygwdwzVHKkrQO0fN"
 CONSUMER_KEY = "ohVk6m7kQ1FldfM6YFDpSRw5Z"
 CONSUMER_SECRET = "5h4ja19xAu5P8DmeayOWLd5ZsCWe2ANsbrqanEmn3kl4jydUiE"
 
@@ -19,8 +26,10 @@ auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
 hashtag = '#covid19'
 
 TCP_IP = 'localhost'
-TCP_PORT = 9001
+TCP_PORT = 8080
 
+
+geolocator = Nominatim(user_agent="tweet")
 
 
 
@@ -37,8 +46,8 @@ def preprocessing(tweet):
     tweet = re.sub(r'[^x00-\x7F]+',' ',tweet)
     tweet = regrex_pattern.sub(r'', tweet)
 
-    #return regrex_pattern.sub('',tweet)
-    return preprocessor.clean(tweet)
+    return regrex_pattern.sub('',tweet)
+    #return preprocessor.clean(tweet)
 
 
 def getTweet(status):
@@ -50,6 +59,9 @@ def getTweet(status):
     location = ""
 
     location = status.user.location
+
+
+    elastic_search = Elasticsearch([{'host':'localhost', 'port':9200}])
     
     if hasattr(status, "retweeted_status"):  # Check if Retweet
         try:
@@ -61,12 +73,72 @@ def getTweet(status):
             tweet = status.extended_tweet["full_text"]
         except AttributeError:
             tweet = status.text
+   
+
+    
 
     return location, preprocessing(tweet)
 
+'''
+def processTweet(tweet):
+
+    # Here, you should implement:
+    # (i) Sentiment analysis,
+
+    # (ii) Get data corresponding to place where the tweet was generate (using geopy or googlemaps)
+    # (iii) Index the data using Elastic Search 
+
+    elastic_search = Elasticsearch([{'host':'localhost', 'port':9200}])
+
+    tweetData = tweet.split("::")
+
+    if len(tweetData) > 1:
+        
+        text = tweetData[1]
+        rawLocation = tweetData[0]
+
+        # (i) Apply Sentiment analysis in "text"
+        analysis = TextBlob(tweet)
+        if analysis.sentiment.polarity > 0:
+                 sentiment = "positive"
+        elif analysis.sentiment.polarity == 0:
+                sentiment = "positive"
+        else:
+                sentiment = "positive"
+        
+
+	# (ii) Get geolocation (state, country, lat, lon, etc...) from rawLocation
+        try:
+                location = geolocator.geocoders(tweetData[0],addressdetails=True)
+                lat = location.rawLocation['lat']
+                lon = location.rawLocation['lon']
+                state = location.rawLocation['address']['state']
+                country = location.rawLocation['address']['country']
+        except:
+                lat = lon = state = country=None
+
+
+        print("\n\n=========================\ntweet: ", tweet)
+        print("Raw location from tweet status: ", rawLocation)
+        print("lat: ", lat)
+        print("lon: ", lon)
+        print("state: ", state)
+        print("country: ", country)
+        print("Text: ", text)
+        print("Sentiment: ", sentiment)
 
 
 
+        # (iii) Post the index on ElasticSearch or log your data in some other way (you are always free!!)
+
+        if lat != None and lon != None and sentiment != None:
+               eslastic_doc = {"lat": lat, "lon": lon, "state":state,"country":country,"sentiment":sentiment} 
+               elastic_search.index(index='tweet-sentiment', doc_type='default', body= eslastic_doc)
+               elastic_search.index
+
+        
+
+'''
 
 # create sockets
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
